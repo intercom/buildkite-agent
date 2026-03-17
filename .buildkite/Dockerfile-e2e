@@ -1,0 +1,9 @@
+FROM public.ecr.aws/docker/library/golang:1.25.8@sha256:779b230b2508037a8095c9e2d223a6405f8426e12233b694dbae50197b9f6d04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    curl \
+    jq \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install

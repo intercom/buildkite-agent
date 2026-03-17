@@ -25,7 +25,7 @@ Example:
     $ buildkite-agent step cancel --step "key"
     $ buildkite-agent step cancel --step "key" --force
     $ buildkite-agent step cancel --step "key" --force --force-grace-period-seconds 30
-		`
+`
 
 type StepCancelConfig struct {
 	GlobalConfig
@@ -57,7 +57,7 @@ var StepCancelCommand = cli.Command{
 		},
 		cli.BoolFlag{
 			Name:   "force",
-			Usage:  "Transition unfinished jobs to a canceled state instead of waiting for jobs to finish uploading artifacts",
+			Usage:  "Transition unfinished jobs to a canceled state instead of waiting for jobs to finish uploading artifacts (default: false)",
 			EnvVar: "BUILDKITE_STEP_CANCEL_FORCE",
 		},
 

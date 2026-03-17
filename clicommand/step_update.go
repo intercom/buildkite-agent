@@ -37,7 +37,11 @@ Example:
     $ buildkite-agent step update "label" "New Label"
     $ buildkite-agent step update "label" " (add to end of label)" --append
     $ buildkite-agent step update "label" < ./tmp/some-new-label
-    $ ./script/label-generator | buildkite-agent step update "label"`
+    $ ./script/label-generator | buildkite-agent step update "label"
+    $ buildkite-agent step update "priority" 10 --step "my-step-key"
+    $ buildkite-agent step update "notify" '[{"github_commit_status": {"context": "my-context"}}]' --append
+    $ buildkite-agent step update "notify" '[{"slack": "my-slack-workspace#my-channel"}]' --append
+`
 
 type StepUpdateConfig struct {
 	GlobalConfig
@@ -70,7 +74,7 @@ var StepUpdateCommand = cli.Command{
 		},
 		cli.BoolFlag{
 			Name:   "append",
-			Usage:  "Append to current attribute instead of replacing it",
+			Usage:  "Append to current attribute instead of replacing it (default: false)",
 			EnvVar: "BUILDKITE_STEP_UPDATE_APPEND",
 		},
 		RedactedVars,

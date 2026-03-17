@@ -46,13 +46,13 @@ var (
 
 	NoHTTP2Flag = cli.BoolFlag{
 		Name:   "no-http2",
-		Usage:  "Disable HTTP2 when communicating with the Agent API.",
+		Usage:  "Disable HTTP2 when communicating with the Agent API (default: false)",
 		EnvVar: "BUILDKITE_NO_HTTP2",
 	}
 
 	DebugFlag = cli.BoolFlag{
 		Name:   "debug",
-		Usage:  "Enable debug mode. Synonym for ′--log-level debug′. Takes precedence over ′--log-level′",
+		Usage:  "Enable debug mode. Synonym for ′--log-level debug′. Takes precedence over ′--log-level′ (default: false)",
 		EnvVar: "BUILDKITE_AGENT_DEBUG",
 	}
 
@@ -71,25 +71,25 @@ var (
 
 	DebugHTTPFlag = cli.BoolFlag{
 		Name:   "debug-http",
-		Usage:  "Enable HTTP debug mode, which dumps all request and response bodies to the log",
+		Usage:  "Enable HTTP debug mode, which dumps all request and response bodies to the log (default: false)",
 		EnvVar: "BUILDKITE_AGENT_DEBUG_HTTP",
 	}
 
 	TraceHTTPFlag = cli.BoolFlag{
 		Name:   "trace-http",
-		Usage:  "Enable HTTP trace mode, which logs timings for each HTTP request. Timings are logged at the debug level unless a request fails at the network level in which case they are logged at the error level",
+		Usage:  "Enable HTTP trace mode, which logs timings for each HTTP request. Timings are logged at the debug level unless a request fails at the network level in which case they are logged at the error level (default: false)",
 		EnvVar: "BUILDKITE_AGENT_TRACE_HTTP",
 	}
 
 	NoColorFlag = cli.BoolFlag{
 		Name:   "no-color",
-		Usage:  "Don't show colors in logging",
+		Usage:  "Don't show colors in logging (default: false)",
 		EnvVar: "BUILDKITE_AGENT_NO_COLOR",
 	}
 
 	StrictSingleHooksFlag = cli.BoolFlag{
 		Name:   "strict-single-hooks",
-		Usage:  "Enforces that only one checkout hook, and only one command hook, can be run",
+		Usage:  "Enforces that only one checkout hook, and only one command hook, can be run (default: false)",
 		EnvVar: "BUILDKITE_STRICT_SINGLE_HOOKS",
 	}
 
@@ -98,14 +98,6 @@ var (
 		Value:  defaultSocketsPath(),
 		Usage:  "Directory where the agent will place sockets",
 		EnvVar: "BUILDKITE_SOCKETS_PATH",
-	}
-
-	KubernetesExecFlag = cli.BoolFlag{
-		Name: "kubernetes-exec",
-		Usage: "This is intended to be used only by the Buildkite k8s stack " +
-			"(github.com/buildkite/agent-stack-k8s); it enables a Unix socket for transporting " +
-			"logs and exit statuses between containers in a pod",
-		EnvVar: "BUILDKITE_KUBERNETES_EXEC",
 	}
 
 	KubernetesContainerIDFlag = cli.IntFlag{
@@ -117,17 +109,15 @@ var (
 	}
 
 	KubernetesLogCollectionGracePeriodFlag = cli.DurationFlag{
-		Name: "kubernetes-log-collection-grace-period",
-		Usage: "How long to wait for Kubernetes processes to complete before stopping log " +
-			"collection during graceful termination. This should be less than the pod's " +
-			"terminationGracePeriodSeconds to allow time for final log upload",
+		Name:   "kubernetes-log-collection-grace-period",
+		Usage:  "Deprecated, do not use",
 		EnvVar: "BUILDKITE_KUBERNETES_LOG_COLLECTION_GRACE_PERIOD",
 		Value:  50 * time.Second,
 	}
 
 	NoMultipartArtifactUploadFlag = cli.BoolFlag{
 		Name:   "no-multipart-artifact-upload",
-		Usage:  "For Buildkite-hosted artifacts, disables the use of multipart uploads. Has no effect on uploads to other destinations such as custom cloud buckets",
+		Usage:  "For Buildkite-hosted artifacts, disables the use of multipart uploads. Has no effect on uploads to other destinations such as custom cloud buckets (default: false)",
 		EnvVar: "BUILDKITE_NO_MULTIPART_ARTIFACT_UPLOAD",
 	}
 
@@ -326,7 +316,7 @@ func UnsetConfigFromEnvironment(c *cli.Context) error {
 		}
 		// split comma delimited env
 		if envVars := f.String(); envVars != "" {
-			for _, env := range strings.Split(envVars, ",") {
+			for env := range strings.SplitSeq(envVars, ",") {
 				os.Unsetenv(env)
 			}
 		}

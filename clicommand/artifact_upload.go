@@ -77,9 +77,11 @@ type ArtifactUploadConfig struct {
 	ContentType string `cli:"content-type"`
 
 	// Uploader flags
-	GlobResolveFollowSymlinks bool `cli:"glob-resolve-follow-symlinks"`
-	UploadSkipSymlinks        bool `cli:"upload-skip-symlinks"`
-	NoMultipartUpload         bool `cli:"no-multipart-artifact-upload"`
+	Literal                   bool   `cli:"literal"`
+	Delimiter                 string `cli:"delimiter"`
+	GlobResolveFollowSymlinks bool   `cli:"glob-resolve-follow-symlinks"`
+	UploadSkipSymlinks        bool   `cli:"upload-skip-symlinks"`
+	NoMultipartUpload         bool   `cli:"no-multipart-artifact-upload"`
 
 	// deprecated
 	FollowSymlinks bool `cli:"follow-symlinks" deprecated-and-renamed-to:"GlobResolveFollowSymlinks"`
@@ -103,18 +105,29 @@ var ArtifactUploadCommand = cli.Command{
 			EnvVar: "BUILDKITE_ARTIFACT_CONTENT_TYPE",
 		},
 		cli.BoolFlag{
+			Name:   "literal",
+			Usage:  "Disables parsing of the upload paths as glob patterns; each path will be treated as a single literal file path (default: false)",
+			EnvVar: "BUILDKITE_AGENT_ARTIFACT_LITERAL",
+		},
+		cli.StringFlag{
+			Name:   "delimiter",
+			Usage:  "Changes the delimiter used to split the upload paths into multiple paths; it can be more than 1 character. When set to the empty string, no splitting occurs",
+			EnvVar: "BUILDKITE_AGENT_ARTIFACT_DELIMITER",
+			Value:  ";",
+		},
+		cli.BoolFlag{
 			Name:   "glob-resolve-follow-symlinks",
-			Usage:  "Follow symbolic links to directories while resolving globs. Note: this will not prevent symlinks to files from being uploaded. Use --upload-skip-symlinks to do that",
+			Usage:  "Follow symbolic links to directories while resolving globs. Note: this will not prevent symlinks to files from being uploaded. Use --upload-skip-symlinks to do that (default: false)",
 			EnvVar: "BUILDKITE_AGENT_ARTIFACT_GLOB_RESOLVE_FOLLOW_SYMLINKS",
 		},
 		cli.BoolFlag{
 			Name:   "upload-skip-symlinks",
-			Usage:  "After the glob has been resolved to a list of files to upload, skip uploading those that are symlinks to files",
+			Usage:  "After the glob has been resolved to a list of files to upload, skip uploading those that are symlinks to files (default: false)",
 			EnvVar: "BUILDKITE_ARTIFACT_UPLOAD_SKIP_SYMLINKS",
 		},
 		cli.BoolFlag{ // Deprecated
 			Name:   "follow-symlinks",
-			Usage:  "Follow symbolic links while resolving globs. Note this argument is deprecated. Use `--glob-resolve-follow-symlinks` instead",
+			Usage:  "Follow symbolic links while resolving globs. Note this argument is deprecated. Use `--glob-resolve-follow-symlinks` instead (default: false)",
 			EnvVar: "BUILDKITE_AGENT_ARTIFACT_SYMLINKS",
 		},
 		NoMultipartArtifactUploadFlag,
@@ -129,15 +142,16 @@ var ArtifactUploadCommand = cli.Command{
 
 		// Setup the uploader
 		uploader := artifact.NewUploader(l, client, artifact.UploaderConfig{
-			JobID:        cfg.Job,
-			Paths:        cfg.UploadPaths,
-			Destination:  cfg.Destination,
-			ContentType:  cfg.ContentType,
-			DebugHTTP:    cfg.DebugHTTP,
-			TraceHTTP:    cfg.TraceHTTP,
-			DisableHTTP2: cfg.NoHTTP2,
-
+			JobID:          cfg.Job,
+			Paths:          cfg.UploadPaths,
+			Destination:    cfg.Destination,
+			ContentType:    cfg.ContentType,
+			DebugHTTP:      cfg.DebugHTTP,
+			TraceHTTP:      cfg.TraceHTTP,
+			DisableHTTP2:   cfg.NoHTTP2,
 			AllowMultipart: !cfg.NoMultipartUpload,
+			Literal:        cfg.Literal,
+			Delimiter:      cfg.Delimiter,
 
 			// If the deprecated flag was set to true, pretend its replacement was set to true too
 			// this works as long as the user only sets one of the two flags

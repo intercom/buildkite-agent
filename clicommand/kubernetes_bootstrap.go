@@ -14,7 +14,6 @@ import (
 	"github.com/buildkite/agent/v3/env"
 	"github.com/buildkite/agent/v3/kubernetes"
 	"github.com/buildkite/agent/v3/process"
-	"github.com/buildkite/roko"
 	"github.com/urfave/cli"
 )
 
@@ -76,22 +75,17 @@ var KubernetesBootstrapCommand = cli.Command{
 		// Registration passes down the env vars the agent normally sets on the
 		// subprocess, but in this case the bootstrap is in a separate
 		// container.
-		timeoutDuration := 120 * time.Second
+		connectionTimeout := 120 * time.Second
 		if cfg.KubernetesBootstrapConnectionTimeout > 0 {
-			timeoutDuration = cfg.KubernetesBootstrapConnectionTimeout
+			connectionTimeout = cfg.KubernetesBootstrapConnectionTimeout
 		}
-		interval := 3 * time.Second
-		maxAttempt := max(int(timeoutDuration.Seconds())/int(interval.Seconds()), 1)
-		rtr := roko.NewRetrier(
-			roko.WithMaxAttempts(maxAttempt),
-			roko.WithStrategy(roko.Constant(interval)),
-		)
-		regResp, err := roko.DoFunc(ctx, rtr, func(rtr *roko.Retrier) (*kubernetes.RegisterResponse, error) {
-			return socket.Connect(ctx)
-		})
+		connectCtx, connectCancel := context.WithTimeout(ctx, connectionTimeout)
+		defer connectCancel()
+		regResp, err := socket.Connect(connectCtx)
 		if err != nil {
 			return fmt.Errorf("error connecting to kubernetes runner: %w", err)
 		}
+		defer socket.Close()
 
 		// Start with the registration response env, then override with our
 		// existing env.
@@ -121,16 +115,19 @@ var KubernetesBootstrapCommand = cli.Command{
 			}
 			cancelSignal = cs
 		}
-		cgp := environ.GetInt("BUILDKITE_CANCEL_GRACE_PERIOD", defaultCancelGracePeriodSecs)
-		sgp := environ.GetInt("BUILDKITE_SIGNAL_GRACE_PERIOD_SECONDS", defaultSignalGracePeriodSecs)
-		signalGracePeriod, err := signalGracePeriod(cgp, sgp)
+		cancelGracePeriodSecs := environ.GetInt("BUILDKITE_CANCEL_GRACE_PERIOD", defaultCancelGracePeriodSecs)
+		cancelGracePeriod := time.Duration(cancelGracePeriodSecs) * time.Second
+		signalGracePeriodSecs := environ.GetInt("BUILDKITE_SIGNAL_GRACE_PERIOD_SECONDS", defaultSignalGracePeriodSecs)
+		signalGracePeriod, err := signalGracePeriod(cancelGracePeriodSecs, signalGracePeriodSecs)
 		if err != nil {
 			return err
 		}
 
-		// Ensure the Kubernetes socket setup is disabled in the subprocess
-		// (we're doing all that here).
-		environ.Set("BUILDKITE_KUBERNETES_EXEC", "false")
+		// BUILDKITE_KUBERNETES_EXEC is a legacy environment variable. It was used to activate the socket
+		// on the bootstrap command, and to activate the socket server on `buildkite-agent start`.
+		// The former has been superseded by this `kubernetes-bootstrap` command.
+		// We keep this env var because some users depend on it as a k8s environment detection mechanism.
+		environ.Set("BUILDKITE_KUBERNETES_EXEC", "true")
 
 		if _, exists := environ.Get("BUILDKITE_BUILD_CHECKOUT_PATH"); !exists {
 			// The OG agent runs as a long-live worker, therefore it set a checkout path dynamically to cater
@@ -162,9 +159,27 @@ var KubernetesBootstrapCommand = cli.Command{
 			// is in state interrupted or the connection died or ...), we should
 			// cancel the job.
 			if err != nil {
-				l.Error("Error waiting for client interrupt: %v", err)
+				l.Error("kubernetes-bootstrap: Error waiting for client interrupt: %v; cancelling work", err)
+			} else {
+				l.Warn("kubernetes-bootstrap: Either the job was cancelled or the pod is being deleted; cancelling work")
 			}
+			// The context cancellation handler in process.Run first calls
+			// Interrupt, waits for its signalGracePeriod, and then calls
+			// Terminate.
 			cancel()
+			// If we block the StatusLoop goroutine, the client will be
+			// considered missing after a short while.
+			go func() {
+				// If we're cancelling because the job was cancelled in the UI, we
+				// should self-exit after cancelGracePeriod to be sure.
+				// (If we're cancelling because the pod is being deleted, Kubernetes
+				// enforces it after terminationGracePeriodSeconds, so self-exiting
+				// in that case is superfluous.)
+				time.Sleep(cancelGracePeriod)
+				// We get here if the main goroutine hasn't returned yet.
+				l.Info("kubernetes-bootstrap: Timed out waiting for subprocess to exit; exiting immediately with status 1")
+				os.Exit(1)
+			}()
 		}); err != nil {
 			return fmt.Errorf("connecting to k8s socket: %w", err)
 		}
@@ -189,29 +204,32 @@ var KubernetesBootstrapCommand = cli.Command{
 			SignalGracePeriod: signalGracePeriod,
 		})
 
-		// We aren't expecting the user to Ctrl-C the process (we're in a k8s
-		// pod), but Kubernetes might send signals.
-		// Forward them to the subprocess.
+		// We aren't expecting the user to Ctrl-C the process (we're in k8s),
+		// but Kubernetes might send signals.
+		// All the containers in the pod get SIGTERM when the pod is deleted,
+		// followed up by SIGKILL after ~TerminationGracePeriodSeconds.
+		// Instead of forwarding Kubernetes's SIGTERM to the subprocess
+		// ourselves, we'll instead swallow the signals, and wait until the
+		// agent container interrupts us via the Unix socket.
 		signals := make(chan os.Signal, 1)
-		signal.Notify(signals,
+		signal.Notify(
+			signals,
 			os.Interrupt,
 			syscall.SIGHUP,
 			syscall.SIGTERM,
 			syscall.SIGINT,
 			syscall.SIGQUIT,
 		)
-
 		go func() {
-			defer signal.Stop(signals)
-			// Forward signals to the subprocess.
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case <-proc.Done():
 					return
-				case <-signals:
-					proc.Interrupt()
+				case sig := <-signals:
+					// Log but otherwise swallow the signal
+					l.Info("kubernetes-bootstrap: Received %v; awaiting interrupt from agent", sig)
 				}
 			}
 		}()

@@ -92,9 +92,8 @@ func (ls *LogStreamer) Start(ctx context.Context) error {
 		ls.conf.MaxSizeBytes = defaultLogMaxSize
 	}
 
-	ls.workerWG.Add(ls.conf.Concurrency)
 	for i := range ls.conf.Concurrency {
-		go ls.worker(ctx, i)
+		ls.workerWG.Go(func() { ls.worker(ctx, i) })
 	}
 
 	return nil
@@ -127,7 +126,7 @@ func (ls *LogStreamer) Process(ctx context.Context, output []byte) error {
 				humanize.IBytes(ls.bytes), humanize.IBytes(ls.conf.MaxSizeBytes))
 			ls.warnedAboutSize = true
 			// In a future version, this will error out, e.g.:
-			//return fmt.Errorf("%w (%d > %d)", errLogExceededMaxSize, ls.bytes, ls.conf.MaxSizeBytes)
+			// return fmt.Errorf("%w (%d > %d)", errLogExceededMaxSize, ls.bytes, ls.conf.MaxSizeBytes)
 		}
 
 		// The next chunk will be up to MaxChunkSizeBytes in size.
@@ -180,7 +179,6 @@ func (ls *LogStreamer) worker(ctx context.Context, id int) {
 	ls.logger.Debug("[LogStreamer/Worker#%d] Worker is starting...", id)
 
 	defer ls.logger.Debug("[LogStreamer/Worker#%d] Worker has shutdown", id)
-	defer ls.workerWG.Done()
 
 	ctx, setStat, done := status.AddSimpleItem(ctx, fmt.Sprintf("Log Streamer Worker %d", id))
 	defer done()

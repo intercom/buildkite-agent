@@ -24,7 +24,7 @@ func hasDeprecatedDockerIntegration(sh *shell.Shell) bool {
 }
 
 func runDeprecatedDockerIntegration(ctx context.Context, sh *shell.Shell, cmd []string) error {
-	var warnNotSet = func(k1, k2 string) {
+	warnNotSet := func(k1, k2 string) {
 		sh.Warningf("%s is set, but without %s, which it requires. You should be able to safely remove this from your pipeline.", k1, k2)
 	}
 
@@ -144,8 +144,8 @@ func runDockerCompose(ctx context.Context, sh *shell.Shell, projectName string, 
 	}
 
 	// composeFile might be multiple files, spaces or colons
-	for _, chunk := range strings.Fields(composeFile) {
-		for _, file := range strings.Split(chunk, ":") {
+	for chunk := range strings.FieldsSeq(composeFile) {
+		for file := range strings.SplitSeq(chunk, ":") {
 			args = append(args, "-f", file)
 		}
 	}

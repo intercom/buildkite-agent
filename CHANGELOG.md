@@ -5,6 +5,341 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v3.120.0](https://github.com/buildkite/agent/tree/v3.120.0) (2026-03-13)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.119.2...v3.120.0)
+
+> [!TIP] 
+> **Streaming job dispatch (Public Preview):** This release adds opt-in support for a new streaming connection between agents and Buildkite, significantly reducing job acceptance latency for self-hosted agents. To try it, start your agent with `--endpoint https://agent-edge.buildkite.com/v3`, for example:
+>
+>     buildkite-agent start --endpoint https://agent-edge.buildkite.com/v3
+>
+> You may alternatively use the environment variable `BUILDKITE_AGENT_ENDPOINT` or edit your `buildkite-agent.cfg` to contain `endpoint=https://agent-edge.buildkite.com/v3`.
+>
+> This capability is in public preview and will become the default in a future release. If you have any feedback or run into issues, please reach out to support@buildkite.com.
+
+> [!NOTE]
+> The minimum version of Go used to build the agent is now Go 1.25.
+
+### Fixed
+- fix: Make submodule clone config an agent config [#3752](https://github.com/buildkite/agent/pull/3752) (@DrJosh9000)
+- fix: prevent header times scan panic after stop [#3740](https://github.com/buildkite/agent/pull/3740) (@lox)
+- fix: handle multiple lifecycle hooks without closed pipe reuse [#3741](https://github.com/buildkite/agent/pull/3741) (@lox)
+- fix: potential deadlock in baton [#3754](https://github.com/buildkite/agent/pull/3754) (@DrJosh9000)
+- fix: Use targetPath helper and tempfile for Azure Blob download [#3751](https://github.com/buildkite/agent/pull/3751) (@DrJosh9000)
+
+### Internal
+
+- Add feature detection for streaming pings [#3757](https://github.com/buildkite/agent/pull/3757) (@moskyb)
+- chore: Apply other go fixes [#3756](https://github.com/buildkite/agent/pull/3756) (@DrJosh9000)
+- chore: use WaitGroup.Go where possible [#3755](https://github.com/buildkite/agent/pull/3755) (@DrJosh9000)
+
+### Dependency updates
+
+- build(deps): bump the container-images group across 5 directories with 1 update [#3749](https://github.com/buildkite/agent/pull/3749) (@dependabot[bot])
+- Upgrade to Go 1.25 and update all dependencies [#3750](https://github.com/buildkite/agent/pull/3750) (@DrJosh9000)
+
+## [v3.119.2](https://github.com/buildkite/agent/tree/v3.119.2) (2026-03-09)
+
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.119.1...v3.119.2)
+
+### Added
+
+- Generate a warning when cache is specified on self-hosted jobs [#3743](https://github.com/buildkite/agent/pull/3743) (@CerealBoy)
+
+### Internal
+
+- chore: add mise config for go and golangci-lint [#3739](https://github.com/buildkite/agent/pull/3739) (@lox)
+
+## [v3.119.1](https://github.com/buildkite/agent/tree/v3.119.1) (2026-03-04)
+
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.119.0...v3.119.1)
+
+### Fixed
+
+- Validate ping mode flag, tweak log levels [#3734](https://github.com/buildkite/agent/pull/3734) (@DrJosh9000)
+- Default ping-mode to ping-only for now [#3733](https://github.com/buildkite/agent/pull/3733) (@moskyb)
+
+## [v3.119.0](https://github.com/buildkite/agent/tree/v3.119.0) (2026-03-03)
+
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.118.1...v3.119.0)
+
+### Added
+
+- Streaming pings [#3697](https://github.com/buildkite/agent/pull/3697) (@DrJosh9000)
+- PS-1663: log s3 credential source for visibility [#3723](https://github.com/buildkite/agent/pull/3723) (@zhming0)
+
+### Fixed
+
+- Fix false URL mismatch detection with insteadOf [#3718](https://github.com/buildkite/agent/pull/3718) (@rajatvig)
+- A-970: Skip git fetch for already-present commits during checkout [#3725](https://github.com/buildkite/agent/pull/3725) (@zhming0)
+- Fix codeowner, add one more owner [#3724](https://github.com/buildkite/agent/pull/3724) (@zhming0)
+
+## [v3.118.1](https://github.com/buildkite/agent/tree/v3.118.1) (2026-02-25)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.118.0...v3.118.1)
+
+### Changed
+- Add retry logic to secret getting [#3706](https://github.com/buildkite/agent/pull/3706) (@mcncl)
+
+#### Internal
+- Test experiment documentation [#3719](https://github.com/buildkite/agent/pull/3719) (@moskyb)
+
+## [v3.118.0](https://github.com/buildkite/agent/compare/v3.117.0...v3.118.0) (2026-02-16)
+
+### Added
+* Add new `buildkite-agent job update` command to update job timeouts [#3707](https://github.com/buildkite/agent/pull/3707) ([matthewborden](https://github.com/matthewborden))
+* Enable setting BUILDKITE_GIT_SUBMODULE with Environment Variables [#3677](https://github.com/buildkite/agent/pull/3677) ([tomowatt](https://github.com/tomowatt))
+
+### Fixed
+* chore: Modified mktemp command for tarball extraction on macOS VMs [#3698](https://github.com/buildkite/agent/pull/3698) ([chrisnavar](https://github.com/chrisnavar))
+
+### Internal
+* Add public preview description to env BUILDKITE_PULL_REQUEST_USING_MERGE_REFSPEC [#3699](https://github.com/buildkite/agent/pull/3699) ([SorchaAbel](https://github.com/SorchaAbel))
+
+## [v3.117.0](https://github.com/buildkite/agent/tree/v3.117.0) (2026-02-04)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.116.0...v3.117.0)
+
+### Added
+- Flag to fetch the diff-base before diffing for `if_changed` [#3689](https://github.com/buildkite/agent/pull/3689) (@DrJosh9000)
+
+### Fixed
+- Continue heartbeats while job is stopping [#3694](https://github.com/buildkite/agent/pull/3694) (@DrJosh9000)
+
+### Internal
+- Make `bucket-url` optional for cache commands [#3690](https://github.com/buildkite/agent/pull/3690) (@mitchbne)
+
+## [v3.116.0](https://github.com/buildkite/agent/tree/v3.116.0) (2026-01-28)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.115.4...v3.116.0)
+
+### Added
+- Support checkout skipping in agent [#3672](https://github.com/buildkite/agent/pull/3672) (@mcncl)
+- Add default BoolFlag, BoolTFlag values to descriptions [#3678](https://github.com/buildkite/agent/pull/3678) (@petetomasik)
+
+### Fixed
+- Exit with non-zero status if ping or heartbeat fail unrecoverably [#3687](https://github.com/buildkite/agent/pull/3687) (@DrJosh9000)
+- Repeated plugins run correct number of times with always-clone-fresh [#3684](https://github.com/buildkite/agent/pull/3684) (@DrJosh9000)
+- Fix nil pointer dereference in meta-data get on API timeout [#3682](https://github.com/buildkite/agent/pull/3682) (@lox)
+
+### Changed
+- In k8s mode, write BUILDKITE_ENV_FILE to /workspace [#3683](https://github.com/buildkite/agent/pull/3683) (@zhming0)
+
+### Internal
+- Refactor plugin config -> envar generation [#3655](https://github.com/buildkite/agent/pull/3655) (@moskyb)
+- Dependabot updates: [#3656](https://github.com/buildkite/agent/pull/3656), [#3654](https://github.com/buildkite/agent/pull/3654), [#3662](https://github.com/buildkite/agent/pull/3662), [#3673](https://github.com/buildkite/agent/pull/3673), [#3675](https://github.com/buildkite/agent/pull/3675), [#3680](https://github.com/buildkite/agent/pull/3680), [#3681](https://github.com/buildkite/agent/pull/3681) (@dependabot[bot])
+
+## [v3.115.4](https://github.com/buildkite/agent/tree/v3.115.4) (2026-01-13)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.115.3...v3.115.4)
+
+### Changed
+
+- Fallback to `/usr/bin/env bash`, when `/bin/bash` does not exist [#3661](https://github.com/buildkite/agent/pull/3661) (@sundbry), [#3667](https://github.com/buildkite/agent/pull/3667) (@zhming0)
+
+### Internal
+- Bump various container base image version. [#3669](https://github.com/buildkite/agent/pull/3669), [#3668](https://github.com/buildkite/agent/pull/3668),  [#3667](https://github.com/buildkite/agent/pull/3667) (@dependabot[bot])
+
+## [v3.115.3](https://github.com/buildkite/agent/tree/v3.115.3) (2026-01-08)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.115.2...v3.115.3)
+
+### Changed
+- PS-1525: keep BUILDKITE_KUBERNETES_EXEC true for k8s bootstrap [#3658](https://github.com/buildkite/agent/pull/3658) (@zhming0)
+
+### Internal
+- Dependencies updates: [#3649](https://github.com/buildkite/agent/pull/3649), [#3651](https://github.com/buildkite/agent/pull/3651), [#3650](https://github.com/buildkite/agent/pull/3650), [#3648](https://github.com/buildkite/agent/pull/3648) (@dependabot[bot])
+
+
+## [v3.115.2](https://github.com/buildkite/agent/tree/v3.115.2) (2025-12-18)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.115.1...v3.115.2)
+
+### Fixed
+- Try to avoid overriding BUILDKITE_PLUGINS_ALWAYS_CLONE_FRESH with false [#3644](https://github.com/buildkite/agent/pull/3644) (@DrJosh9000)
+- SUP-5826: Remove experiment from 'env' command [#3635](https://github.com/buildkite/agent/pull/3635) (@Mykematt)
+
+### Internal
+- Nested-loop jitter structure for log processing [#3645](https://github.com/buildkite/agent/pull/3645) (@DrJosh9000)
+- Add E2E test for Azure Blob storage [#3642](https://github.com/buildkite/agent/pull/3642) (@DrJosh9000)
+- PB-1007: add e2e test for gcs artifact upload/download [#3633](https://github.com/buildkite/agent/pull/3633) (@zhming0)
+- PB-1025: improve e2e test DevEX [#3634](https://github.com/buildkite/agent/pull/3634) (@zhming0)
+
+### Dependency updates
+- chore(deps): bump zstash to v0.7.0 [#3632](https://github.com/buildkite/agent/pull/3632) (@wolfeidau)
+- build(deps): bump the cloud-providers group with 2 updates [#3638](https://github.com/buildkite/agent/pull/3638) (@dependabot[bot])
+- build(deps): bump the otel group with 5 updates [#3637](https://github.com/buildkite/agent/pull/3637) (@dependabot[bot])
+- build(deps): bump github.com/DataDog/datadog-go/v5 from 5.8.1 to 5.8.2 [#3639](https://github.com/buildkite/agent/pull/3639) (@dependabot[bot])
+- build(deps): bump the container-images group across 5 directories with 1 update [#3640](https://github.com/buildkite/agent/pull/3640) (@dependabot[bot])
+- build(deps): bump docker/library/golang from `cf1272d` to `54528d1` in /.buildkite in the container-images group across 1 directory [#3641](https://github.com/buildkite/agent/pull/3641) (@dependabot[bot])
+
+
+## [v3.115.1](https://github.com/buildkite/agent/tree/v3.115.1) (2025-12-12)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.115.0...v3.115.1)
+
+### Fixes
+- PS-1491: Fix double retry issue for k8s mode bootstrap [#3628](https://github.com/buildkite/agent/pull/3628) (@zhming0)
+
+### Internal
+- PB-1023: remove old kubernetes bootstrap setup [#3629](https://github.com/buildkite/agent/pull/3629) (@zhming0)
+- chore(deps): update zstash to v0.6.0 and update progress callback [#3630](https://github.com/buildkite/agent/pull/3630) (@wolfeidau)
+- feat: add support for concurrent save and restore operations [#3627](https://github.com/buildkite/agent/pull/3627) (@wolfeidau)
+
+## [v3.115.0](https://github.com/buildkite/agent/tree/v3.115.0) (2025-12-10)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.114.1...v3.115.0)
+
+### Added
+- `--changed-files-path` for pipeline upload, which allows users to specify a list of files changed for `if_changed` computation [#3620](https://github.com/buildkite/agent/pull/3620) (@pyrocat101)
+
+### Fixes
+- Further fixes to custom bucket artifact uploads/downloads [#3615](https://github.com/buildkite/agent/pull/3615) (@moskyb)
+
+### Internal
+- Dependabot updates [#3618](https://github.com/buildkite/agent/pull/3618) [#3619](https://github.com/buildkite/agent/pull/3619) [#3622](https://github.com/buildkite/agent/pull/3622) [#3623](https://github.com/buildkite/agent/pull/3623) [#3621](https://github.com/buildkite/agent/pull/3621) (@dependabot[bot])
+
+## [v3.114.1](https://github.com/buildkite/agent/tree/v3.114.1) (2025-12-05)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.114.0...v3.114.1)
+
+### Fixed
+- Fix issue where artifacts uploaded to customer-managed s3 buckets could not be downloaded [#3607](https://github.com/buildkite/agent/pull/3607) (@moskyb)
+
+### Internal
+- Add an end-to-end testing framework! [#3611](https://github.com/buildkite/agent/pull/3611) [#3610](https://github.com/buildkite/agent/pull/3610) [#3609](https://github.com/buildkite/agent/pull/3609) [#3608](https://github.com/buildkite/agent/pull/3608) [#3606](https://github.com/buildkite/agent/pull/3606) [#3604](https://github.com/buildkite/agent/pull/3604) [#3599](https://github.com/buildkite/agent/pull/3599) (@DrJosh9000)
+- Dependency updates [#3601](https://github.com/buildkite/agent/pull/3601) [#3600](https://github.com/buildkite/agent/pull/3600) (@dependabot[bot])
+- Update MIME types [#3603](https://github.com/buildkite/agent/pull/3603) (@DrJosh9000)
+
+## [v3.114.0](https://github.com/buildkite/agent/tree/v3.114.0) (2025-11-25)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.113.0...v3.114.0)
+
+### Added
+- feat: add agent metadata to OTEL trace attributes [#3587](https://github.com/buildkite/agent/pull/3587) (@pyrocat101)
+
+### Fixed
+- Fix for the agent sometimes failing to disconnect properly when exiting - agent pool: Send error after disconnecting [#3596](https://github.com/buildkite/agent/pull/3596) (@DrJosh9000)
+
+### Internal
+- internal/redact: Add another test with minor cleanup [#3591](https://github.com/buildkite/agent/pull/3591) (@DrJosh9000)
+- Run gofumpt as part of CI [#3589](https://github.com/buildkite/agent/pull/3589) (@moskyb)
+
+### Dependency updates
+- build(deps): bump the cloud-providers group with 7 updates [#3593](https://github.com/buildkite/agent/pull/3593) (@dependabot[bot])
+- build(deps): bump the container-images group across 5 directories with 1 update [#3594](https://github.com/buildkite/agent/pull/3594) (@dependabot[bot])
+- build(deps): bump the container-images group across 1 directory with 2 updates [#3595](https://github.com/buildkite/agent/pull/3595) (@dependabot[bot])
+- build(deps): bump golang.org/x/crypto from 0.44.0 to 0.45.0 [#3590](https://github.com/buildkite/agent/pull/3590) (@dependabot[bot])
+
+
+## [v3.113.0](https://github.com/buildkite/agent/tree/v3.113.0) (2025-11-18)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.112.0...v3.113.0)
+
+### Added
+- Add Prometheus /metrics handler and some basic metrics [#3576](https://github.com/buildkite/agent/pull/3576) (@DrJosh9000)
+
+### Fixed
+- Fix the pipeline upload --reject-secrets flag not rejecting secrets [#3580](https://github.com/buildkite/agent/pull/3580) (@moskyb)
+- Fix idle tracking for agents that never received jobs [#3579](https://github.com/buildkite/agent/pull/3579) (@scadu)
+
+### Internal
+- Clarify agent idlemonitor states in comment [#3582](https://github.com/buildkite/agent/pull/3582) (@DrJosh9000)
+- Put secret scan error into exit message [#3581](https://github.com/buildkite/agent/pull/3581) (@DrJosh9000)
+
+### Dependency updates
+- build(deps): bump the golang-x group with 3 updates [#3583](https://github.com/buildkite/agent/pull/3583) (@dependabot[bot])
+- build(deps): bump the cloud-providers group with 7 updates [#3584](https://github.com/buildkite/agent/pull/3584) (@dependabot[bot])
+
+## [v3.112.0](https://github.com/buildkite/agent/tree/v3.112.0) (2025-11-12)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.111.0...v3.112.0)
+
+### Added
+
+The agent can now annotate jobs as well as builds! Job annotations will show up in a dedicated section of the job detail
+in the build UI. This is a great way to provide additional, richly-formatted context and information about specific jobs.
+
+See the [PR](https://github.com/buildkite/agent/pull/3569) for more details.
+
+### Changed
+- Agents will now check for new work more quickly immediately after finishing a job [#3571](https://github.com/buildkite/agent/pull/3571) (@DrJosh9000)
+
+### Fixed
+- IdleMonitor-related fixes [#3570](https://github.com/buildkite/agent/pull/3570) (@DrJosh9000)
+- Fix confusing error message when hashing artifact payloads [#3565](https://github.com/buildkite/agent/pull/3565) (@moskyb)
+
+### Internal
+- Dependency updates [#3575](https://github.com/buildkite/agent/pull/3575) [#3574](https://github.com/buildkite/agent/pull/3574) [#3573](https://github.com/buildkite/agent/pull/3573) [#3572](https://github.com/buildkite/agent/pull/3572) (@dependabot[bot])
+
+## [v3.111.0](https://github.com/buildkite/agent/tree/v3.111.0) (2025-11-05)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.110.0...v3.111.0)
+
+> [!WARNING]
+> If you use a custom S3 bucket for artifacts, this applies to you.
+>
+> As part of updating to AWS Go SDK v2, the "credential chain" for providing
+> authentication credentials to access artifacts in custom S3 buckets, is now
+> more standard. The existing `BUILDKITE_S3_` env vars are still available and
+> take precedence, but when these are not set, the AWS-default mechanisms are
+> used as provided by the SDK, with as few customisations as possible.
+>
+> This means additional ways to pass credentials to the AWS S3 client may be
+> accepted, and where multiple credentials are available, the precedence may
+> have changed (to match what the AWS SDK expects by default).
+>
+> Because of this, and the number of combinations of different ways to provide
+> credentials, this change may inadvertently break pipelines using custom S3
+> buckets for artifacts. Please reach out to support@buildkite.com or raise
+> issues in GitHub if this impacts you!
+
+### Added
+- Add cache save and restore using github.com/buildkite/zstash [#3551](https://github.com/buildkite/agent/pull/3551) (@wolfeidau)
+
+### Changed
+- Upgrade to AWS Go SDK v2 [#3554](https://github.com/buildkite/agent/pull/3554) (@DrJosh9000)
+- Catch all 'ignored' vars [#3502](https://github.com/buildkite/agent/pull/3502) (@DrJosh9000)
+
+### Internal
+- chore: go modernize to do a bit of a tidy up and remove some junk [#3560](https://github.com/buildkite/agent/pull/3560) (@wolfeidau)
+- Enforce that command descriptions indent using spaces, not tabs [#3553](https://github.com/buildkite/agent/pull/3553) (@moskyb)
+
+### Dependency updates
+- build(deps): bump the cloud-providers group across 1 directory with 9 updates [#3566](https://github.com/buildkite/agent/pull/3566) (@dependabot[bot])
+- build(deps): bump golangci/golangci-lint from v2.5-alpine to v2.6-alpine in /.buildkite in the container-images group across 1 directory [#3563](https://github.com/buildkite/agent/pull/3563) (@dependabot[bot])
+- build(deps): bump the container-images group across 4 directories with 1 update [#3564](https://github.com/buildkite/agent/pull/3564) (@dependabot[bot])
+- build(deps): bump gopkg.in/DataDog/dd-trace-go.v1 from 1.74.7 to 1.74.8 [#3555](https://github.com/buildkite/agent/pull/3555) (@dependabot[bot])
+- build(deps): bump the cloud-providers group with 6 updates [#3556](https://github.com/buildkite/agent/pull/3556) (@dependabot[bot])
+- build(deps): bump the container-images group across 4 directories with 1 update [#3557](https://github.com/buildkite/agent/pull/3557) (@dependabot[bot])
+- build(deps): bump docker/library/golang from `02ce1d7` to `5034fa4` in /.buildkite in the container-images group across 1 directory [#3558](https://github.com/buildkite/agent/pull/3558) (@dependabot[bot])
+
+
+## [v3.110.0](https://github.com/buildkite/agent/tree/v3.110.0) (2025-10-22)
+[Full Changelog](https://github.com/buildkite/agent/compare/v3.109.1...v3.110.0)
+
+### Added
+- Configurable chunks interval [#3521](https://github.com/buildkite/agent/pull/3521) (@catkins)
+- Inject OpenTelemetry context to all child processes [#3548](https://github.com/buildkite/agent/pull/3548) (@zhming0)
+  - This is done using [environment variables](https://opentelemetry.io/docs/specs/otel/context/env-carriers/). This may interfere with existing OTel environment variables if they are manually added some other way.
+- Add --literal and --delimiter flags to artifact upload [#3543](https://github.com/buildkite/agent/pull/3543) (@DrJosh9000)
+
+### Changed
+Various improvements and fixes to do with signal and cancel grace periods, and signal handling, most notably:
+- When cancelling a job, the timeout before sending a SIGKILL to the job has changed from cancel-grace-period to signal-grace-period (`--signal-grace-period-seconds` flag, `BUILDKITE_SIGNAL_GRACE_PERIOD_SECONDS` env var) to allow the agent some extra time to upload job logs and mark the job as finished. By default, signal-grace-period is 1 second shorter than cancel-grace-period. You may wish to increase cancel-grace-period accordingly.
+- When SIGQUIT is handled by the bootstrap, the exit code is now 131, and it no longer dumps a stacktrace.
+- The recently-added `--kubernetes-log-collection-grace-period` flag is now deprecated. Instead, use `--cancel-grace-period`.
+- When running the agent interactively, you can now Ctrl-C a third time to exit immediately.
+- In Kubernetes mode, the agent now begins shutting down on the first SIGTERM. The kubernetes-bootstrap now swallows SIGTERM with a logged message, and waits for the agent container to send an interrupt.
+- When the agent is cancelling jobs because it is stopping, all jobs start cancellation simultaneously. This allows the agent to exit sooner when multiple workers (`--spawn` flag) are used.
+See [#3549](https://github.com/buildkite/agent/pull/3549), [#3547](https://github.com/buildkite/agent/pull/3547), [#3534](https://github.com/buildkite/agent/pull/3534) (@DrJosh9000)
+
+### Fixed
+- Refresh checkout root file handle after checkout hook [#3546](https://github.com/buildkite/agent/pull/3546) (@zhming0)
+- Bump zzglob to v0.4.2 to fix uploading artifact paths containing `~` [#3539](https://github.com/buildkite/agent/pull/3539) (@DrJosh9000)
+
+### Internal
+- Docs: Add examples for step update commands for priority and notify attributes [#3532](https://github.com/buildkite/agent/pull/3532) (@tomowatt)
+- Docs: Update URLs in agent cfg comments [#3536](https://github.com/buildkite/agent/pull/3536) (@petetomasik)
+
+### Dependency updates
+- Upgrade Datadog-go to v5.8.1 to work around mod checksum issues [#3538](https://github.com/buildkite/agent/pull/3538) (@dannyfallon)
+- build(deps): bump the container-images group across 3 directories with 2 updates [#3545](https://github.com/buildkite/agent/pull/3545) (@dependabot[bot])
+- build(deps): bump gopkg.in/DataDog/dd-trace-go.v1 from 1.74.6 to 1.74.7 [#3544](https://github.com/buildkite/agent/pull/3544) (@dependabot[bot])
+- build(deps): bump github.com/gofrs/flock from 0.12.1 to 0.13.0 [#3523](https://github.com/buildkite/agent/pull/3523) (@dependabot[bot])
+- build(deps): bump docker/library/golang from 1.24.8 to 1.24.9 in /.buildkite in the container-images group across 1 directory [#3542](https://github.com/buildkite/agent/pull/3542) (@dependabot[bot])
+- build(deps): bump the cloud-providers group across 1 directory with 6 updates [#3541](https://github.com/buildkite/agent/pull/3541) (@dependabot[bot])
+- build(deps): bump the container-images group across 3 directories with 1 update [#3540](https://github.com/buildkite/agent/pull/3540) (@dependabot[bot])
+- build(deps): bump the golang-x group with 5 updates [#3525](https://github.com/buildkite/agent/pull/3525) (@dependabot[bot])
+
+
 ## [v3.109.1](https://github.com/buildkite/agent/tree/v3.109.1) (2025-10-15)
 [Full Changelog](https://github.com/buildkite/agent/compare/v3.109.0...v3.109.1)
 

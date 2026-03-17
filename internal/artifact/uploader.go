@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"iter"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,10 +27,7 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-const (
-	ArtifactPathDelimiter    = ";"
-	ArtifactFallbackMimeType = "binary/octet-stream"
-)
+const ArtifactFallbackMimeType = "binary/octet-stream"
 
 type UploaderConfig struct {
 	// The ID of the Job
@@ -48,6 +46,12 @@ type UploaderConfig struct {
 	DebugHTTP    bool
 	TraceHTTP    bool
 	DisableHTTP2 bool
+
+	// When true, disables parsing Paths as globs; treat each path literally.
+	Literal bool
+
+	// The delimiter used to split Paths into multiple paths/globs.
+	Delimiter string
 
 	// Whether to follow symbolic links when resolving globs
 	GlobResolveFollowSymlinks bool
@@ -161,18 +165,21 @@ func (a *Uploader) collect(ctx context.Context) ([]*api.Artifact, error) {
 	defer cancel(nil)
 	var wg sync.WaitGroup
 	for range runtime.GOMAXPROCS(0) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			if err := ac.worker(wctx, filesCh); err != nil {
 				cancel(err)
 			}
-		}()
+		})
 	}
 
-	// Start resolving globs into files.
-	if err := a.glob(wctx, filesCh); err != nil {
+	fileFinder := a.glob
+	if a.conf.Literal {
+		fileFinder = a.literal
+	}
+
+	// Start resolving globs (or not) and sending file paths to workers.
+	a.logger.Debug("Searching for %s", a.conf.Paths)
+	if err := fileFinder(wctx, a.paths(), filesCh); err != nil {
 		cancel(err)
 	}
 
@@ -195,17 +202,38 @@ type artifactCollector struct {
 	artifacts []*api.Artifact
 }
 
+func (a *Uploader) paths() iter.Seq[string] {
+	if a.conf.Delimiter == "" {
+		// Don't do any splitting.
+		return slices.Values([]string{a.conf.Paths})
+	}
+	return strings.SplitSeq(a.conf.Paths, a.conf.Delimiter)
+}
+
+func (a *Uploader) literal(ctx context.Context, paths iter.Seq[string], filesCh chan<- string) error {
+	// literal is solely responsible for writing to the channel
+	defer close(filesCh)
+
+	for path := range paths {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			continue
+		}
+		filesCh <- path
+	}
+	return nil
+}
+
 // glob resolves the globs (patterns with * and ** in them).
-func (a *Uploader) glob(ctx context.Context, filesCh chan<- string) error {
+func (a *Uploader) glob(ctx context.Context, paths iter.Seq[string], filesCh chan<- string) error {
 	// glob is solely responsible for writing to the channel.
 	defer close(filesCh)
 
-	// New zzglob library. Do all globs at once with MultiGlob, which takes
-	// care of any necessary parallelism under the hood.
-	a.logger.Debug("Searching for %s", a.conf.Paths)
+	// Do all globs at once with MultiGlob, which takes care of any necessary
+	// parallelism under the hood.
 	var patterns []*zzglob.Pattern
-	for _, globPath := range strings.Split(a.conf.Paths, ArtifactPathDelimiter) {
-		globPath := strings.TrimSpace(globPath)
+	for globPath := range paths {
+		globPath = strings.TrimSpace(globPath)
 		if globPath == "" {
 			continue
 		}
@@ -316,7 +344,7 @@ func (c *artifactCollector) worker(ctx context.Context, filesCh <-chan string) e
 	}
 }
 
-func (a *Uploader) build(path string, absolutePath string) (*api.Artifact, error) {
+func (a *Uploader) build(path, absolutePath string) (*api.Artifact, error) {
 	// Open the file to hash its contents.
 	file, err := os.Open(absolutePath)
 	if err != nil {
@@ -325,11 +353,10 @@ func (a *Uploader) build(path string, absolutePath string) (*api.Artifact, error
 	defer file.Close() //nolint:errcheck // File is only open for read.
 
 	// Generate a SHA-1 and SHA-256 checksums for the file.
-	// Writing to hashes never errors, but reading from the file might.
 	hash1, hash256 := sha1.New(), sha256.New()
 	size, err := io.Copy(io.MultiWriter(hash1, hash256), file)
 	if err != nil {
-		return nil, fmt.Errorf("reading contents of %s: %w", absolutePath, err)
+		return nil, fmt.Errorf("hashing artifact file %s: %w", absolutePath, err)
 	}
 	sha1sum := fmt.Sprintf("%040x", hash1.Sum(nil))
 	sha256sum := fmt.Sprintf("%064x", hash256.Sum(nil))
@@ -446,9 +473,6 @@ type workUnitResult struct {
 type artifactUploadWorker struct {
 	*Uploader
 
-	// Counts the worker goroutines.
-	wg sync.WaitGroup
-
 	// A tracker for every artifact.
 	// The map is written at the start of upload, and other goroutines only read
 	// afterwards.
@@ -532,9 +556,9 @@ func (a *Uploader) upload(ctx context.Context, artifacts []*api.Artifact, upload
 	go worker.stateUpdater(ctx, resultsCh, errCh)
 
 	// Worker goroutines that work on work units.
+	var wg sync.WaitGroup
 	for range runtime.GOMAXPROCS(0) {
-		worker.wg.Add(1)
-		go worker.doWorkUnits(ctx, unitsCh, resultsCh)
+		wg.Go(func() { worker.doWorkUnits(ctx, unitsCh, resultsCh) })
 	}
 
 	// Send the work units for each artifact to the workers.
@@ -555,7 +579,7 @@ func (a *Uploader) upload(ctx context.Context, artifacts []*api.Artifact, upload
 	a.logger.Debug("Waiting for uploads to complete...")
 
 	// Wait for the workers to finish
-	worker.wg.Wait()
+	wg.Wait()
 
 	// Since the workers are done, all work unit states have been sent to the
 	// state updater.
@@ -574,8 +598,6 @@ func (a *Uploader) upload(ctx context.Context, artifacts []*api.Artifact, upload
 }
 
 func (a *artifactUploadWorker) doWorkUnits(ctx context.Context, unitsCh <-chan workUnit, resultsCh chan<- workUnitResult) {
-	defer a.wg.Done()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -603,7 +625,6 @@ func (a *artifactUploadWorker) doWorkUnits(ctx context.Context, unitsCh <-chan w
 				}
 				return etag, err
 			})
-
 			// If it failed, abort any other work items for this artifact.
 			if err != nil {
 				a.logger.Info("Upload failed for %s: %v", workUnit.Description(), err)
