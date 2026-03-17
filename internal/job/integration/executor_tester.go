@@ -184,7 +184,7 @@ func (e *ExecutorTester) MustMock(t *testing.T, name string) *bintest.Mock {
 	t.Helper()
 	mock, err := e.Mock(name)
 	if err != nil {
-		t.Fatalf("BootstrapTester.Mock(%q) error = %v", name, err)
+		t.Fatalf("ExecutorTester.Mock(%q) error = %v", name, err)
 	}
 	return mock
 }
@@ -212,7 +212,7 @@ func (e *ExecutorTester) MockAgent(t *testing.T) *bintest.Mock {
 }
 
 // writeHookScript generates a buildkite-agent hook script that calls a mock binary
-func (e *ExecutorTester) writeHookScript(m *bintest.Mock, name string, dir string, args ...string) (string, error) {
+func (e *ExecutorTester) writeHookScript(m *bintest.Mock, name, dir string, args ...string) (string, error) {
 	hookScript := filepath.Join(dir, name)
 	body := ""
 

@@ -91,7 +91,6 @@ var MetaDataGetCommand = cli.Command{
 			}
 			return metaData, resp, nil
 		})
-
 		if err != nil {
 			// Buildkite returns a 404 if the key doesn't exist. If
 			// we get this status, and we've got a default - return
@@ -99,7 +98,7 @@ var MetaDataGetCommand = cli.Command{
 			//
 			// We also use `IsSet` instead of `cfg.Default != ""`
 			// to allow people to use a default of a blank string.
-			if resp.StatusCode == 404 && c.IsSet("default") {
+			if resp != nil && resp.StatusCode == 404 && c.IsSet("default") {
 				l.Warn(
 					"No meta-data value exists with key %q, returning the supplied default %q",
 					cfg.Key,

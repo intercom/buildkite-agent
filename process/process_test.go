@@ -150,16 +150,12 @@ func TestProcessRunsAndSignalsStartedAndStopped(t *testing.T) {
 	})
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		<-p.Started()
 		atomic.AddInt32(&started, 1)
 		<-p.Done()
 		atomic.AddInt32(&done, 1)
-	}()
+	})
 
 	// wait for the process to finish
 	if err := p.Run(context.Background()); err != nil {
@@ -407,7 +403,7 @@ func assertProcessDoesntExist(t *testing.T, p *process.Process) {
 }
 
 func BenchmarkProcess(b *testing.B) {
-	for range b.N {
+	for b.Loop() {
 		proc := process.New(logger.Discard, process.Config{
 			Path: os.Args[0],
 			Env:  []string{"TEST_MAIN=output"},

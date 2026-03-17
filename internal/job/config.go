@@ -49,7 +49,7 @@ type ExecutorConfig struct {
 	Plugins string
 
 	// Should git submodules be checked out
-	GitSubmodules bool
+	GitSubmodules bool `env:"BUILDKITE_GIT_SUBMODULES"`
 
 	// If the commit was part of a pull request, this will container the PR number
 	PullRequest string
@@ -74,6 +74,12 @@ type ExecutorConfig struct {
 
 	// Should the executor remove an existing checkout before running the job
 	CleanCheckout bool `env:"BUILDKITE_CLEAN_CHECKOUT"`
+
+	// Skip the checkout phase entirely
+	SkipCheckout bool `env:"BUILDKITE_SKIP_CHECKOUT"`
+
+	// Skip git fetch if the commit already exists locally
+	GitSkipFetchExistingCommits bool `env:"BUILDKITE_GIT_SKIP_FETCH_EXISTING_COMMITS"`
 
 	// Flags to pass to "git checkout" command
 	GitCheckoutFlags string `env:"BUILDKITE_GIT_CHECKOUT_FLAGS"`
@@ -184,10 +190,6 @@ type ExecutorConfig struct {
 	// Whether to start the JobAPI
 	JobAPI bool
 
-	// Whether to enable Kubernetes support, and which container we're running in
-	KubernetesExec        bool
-	KubernetesContainerID int
-
 	// The warnings that have been disabled by the user
 	DisabledWarnings []string
 
@@ -201,7 +203,7 @@ func (c *ExecutorConfig) ReadFromEnvironment(environ *env.Environment) map[strin
 	changed := map[string]string{}
 
 	// Use reflection for the type and values
-	fields := reflect.TypeOf(*c)
+	fields := reflect.TypeFor[ExecutorConfig]()
 	values := reflect.ValueOf(c).Elem()
 
 	// Iterate over all available fields and read the tag value

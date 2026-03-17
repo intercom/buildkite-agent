@@ -1,4 +1,4 @@
-*.DS_STORE
+.DS_Store
 
 /tmp
 /pkg
@@ -23,7 +23,6 @@ packaging/docker/*/hooks/
 .buildkite-agent.cfg
 
 .idea
-.vscode
 
 # Editor config boils down to personal preference
 .editorconfig

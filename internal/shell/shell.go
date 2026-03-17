@@ -28,6 +28,8 @@ import (
 	"github.com/buildkite/shellwords"
 	"github.com/gofrs/flock"
 	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -499,6 +501,7 @@ func WithStringSearch(m map[string]bool) RunCommandOpt { return func(c *runConfi
 // injectTraceCtx adds tracing information to the given env vars to support
 // distributed tracing across jobs/builds.
 func (s *Shell) injectTraceCtx(ctx context.Context, env *env.Environment) {
+	// OpenTracing path (for Datadog backend)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := tracetools.EncodeTraceContext(span, env.Dump(), s.traceContextCodec); err != nil {
 			if s.debug {
@@ -508,20 +511,21 @@ func (s *Shell) injectTraceCtx(ctx context.Context, env *env.Environment) {
 		return
 	}
 
-	if span := trace.SpanFromContext(ctx); span != nil && span.SpanContext().IsValid() {
-		envMap := env.Dump()
-		if err := tracetools.EncodeOTelTraceContext(span, envMap); err != nil {
-			if s.debug {
-				s.Warningf("Failed to encode trace context: %v", err)
-			}
-			return
-		}
+	// OpenTelemetry path (for OpenTelemetry backend)
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() {
+		carrier := propagation.MapCarrier{}
+		otel.GetTextMapPropagator().Inject(ctx, carrier)
 
-		if traceparent, ok := envMap["traceparent"]; ok {
-			env.Set("TRACEPARENT", traceparent)
-		}
-		if tracestate, ok := envMap["tracestate"]; ok {
-			env.Set("TRACESTATE", tracestate)
+		// Transform HTTP header names to environment variable names per
+		// https://opentelemetry.io/docs/specs/otel/context/env-carriers/
+		// Examples: "traceparent" -> "TRACEPARENT", "X-B3-TraceId" -> "X_B3_TRACEID"
+		//
+		// It remains unclear whether various ecosystems are well equipped handling normalized env vars.
+		// But it will be trivial to conform to the standard.
+		// We shall see how community responds to this.
+		for k, v := range carrier {
+			envKey := strings.ToUpper(strings.ReplaceAll(k, "-", "_"))
+			env.Set(envKey, v)
 		}
 	}
 }
